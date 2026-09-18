@@ -1,26 +1,66 @@
-import React, { useEffect } from 'react';
-import './SakuraBg.css';
+import React, { useMemo } from "react";
+import "./SakuraBg.css";
 
-const NUM_PETALS = 15;
+const PETAL_COUNT = 22;
 
-export default function SakuraBg() {
-  useEffect(() => {
-    const container = document.querySelector('.sakura-container');
-    if (!container) return;
+export default function SakuraBg({ theme = "dawn", isPetalsPaused = false }) {
+  // Generate fixed random configuration for petals once
+  const petals = useMemo(() => {
+    return Array.from({ length: PETAL_COUNT }).map((_, i) => {
+      const petalNum = (i % 10) + 1;
+      const left = (i / PETAL_COUNT) * 100 + (Math.random() * 8 - 4);
+      const duration = 16 + Math.random() * 12; // 16s to 28s slow, peaceful drift
+      const delay = -(Math.random() * 28); // negative delay so petals are immediately drifting
+      const size = 16 + Math.random() * 22; // 16px to 38px
+      const sway = 25 + Math.random() * 35; // gentle sway distance
+      const swayEnd = -(15 + Math.random() * 30);
+      const opacity = 0.35 + Math.random() * 0.35; // soft, dreamy opacity
+      const blur = size < 20 ? 0.6 : 0; // tiny petals slightly soft-focused
+      const zIndex = size > 32 ? 15 : 2;
 
-    container.innerHTML = ''; // Clear previous petals
-
-    for (let i = 0; i < NUM_PETALS; i++) {
-      const petal = document.createElement('img');
-      petal.src = `/petals/petal${(i % 10) + 1}.png`; // assuming 10 petal images
-      petal.className = 'sakura-petal';
-      petal.style.left = `${Math.random() * 100}vw`;
-      petal.style.animationDuration = `${5 + Math.random() * 10}s`;
-      petal.style.width = `${20 + Math.random() * 20}px`;
-      container.appendChild(petal);
-    }
+      return {
+        id: i,
+        src: `/petals/petal${petalNum}.png`,
+        left,
+        duration,
+        delay,
+        size,
+        sway,
+        swayEnd,
+        opacity,
+        blur,
+        zIndex,
+      };
+    });
   }, []);
-  
 
-  return <div className="sakura-container pointer-events-none"></div>;
+  return (
+    <div className="sakura-container" aria-hidden="true">
+      {/* Night starlight twinkle layer */}
+      {theme === "night" && <div className="night-stars" />}
+
+      {/* Floating Sakura Petals (peaceful, natural drift without cursor reaction) */}
+      {!isPetalsPaused &&
+        petals.map((p) => (
+          <img
+            key={p.id}
+            src={p.src}
+            alt=""
+            className="sakura-petal-item"
+            style={{
+              left: `${Math.max(0, Math.min(98, p.left))}%`,
+              width: `${p.size}px`,
+              height: "auto",
+              animationDuration: `${p.duration}s`,
+              animationDelay: `${p.delay}s`,
+              zIndex: p.zIndex,
+              filter: p.blur ? `blur(${p.blur}px)` : "none",
+              "--petal-opacity": p.opacity,
+              "--sway": `${p.sway}px`,
+              "--sway-end": `${p.swayEnd}px`,
+            }}
+          />
+        ))}
+    </div>
+  );
 }
